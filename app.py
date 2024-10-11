@@ -1,35 +1,31 @@
-from flask import Flask, jsonify, request
-from easysnmp import Session
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-# ตั้งค่า session SNMP (เปลี่ยน IP และ community string ให้ตรงกับอุปกรณ์ของคุณ)
-session = Session(hostname='192.168.116.137', community='public', version=2)
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# ฟังก์ชันดึงข้อมูลสถานะของอินเทอร์เฟซ
-def get_interface_status(interface_oid):
-    interface_status = session.get(interface_oid)
-    return 'Up' if int(interface_status.value) == 1 else 'Down'
-
-# Endpoint สำหรับดึงสถานะของอินเทอร์เฟซ
 @app.route('/api/interface_status', methods=['GET'])
-def interface_status():
-    interface_oids = [
-        '1.3.6.1.2.1.2.2.1.7.1',  # เปลี่ยน OID ตามต้องการ
-        '1.3.6.1.2.1.2.2.1.7.2',
-        # เพิ่ม OIDs สำหรับอินเทอร์เฟซอื่นๆ
+def get_interface_status():
+    # Mock data for interfaces. Replace with your SNMP code to fetch actual statuses.
+    interfaces = [
+        {'interface': 1, 'status': 'Up'},
+        {'interface': 2, 'status': 'Down'},
+        # Add more interfaces as needed
     ]
-    statuses = [{'interface': i + 1, 'status': get_interface_status(oid)} for i, oid in enumerate(interface_oids)]
-    return jsonify(statuses)
+    return jsonify(interfaces)
 
-# Endpoint สำหรับอัพเดทสถานะอินเทอร์เฟซ
 @app.route('/api/update_interface', methods=['POST'])
-def update_interface():
+def update_interface_status():
     data = request.get_json()
-    interface_oid = data.get('oid')
-    new_status = data.get('status')
-    session.set(interface_oid, 'i', 1 if new_status == 'Up' else 2)
-    return jsonify({'message': 'Interface updated successfully!'})
+    oid = data['oid']
+    status = data['status']
+
+    # Add your SNMP code here to update the interface status based on `oid` and `status`
+    # For example, use easysnmp or pysnmp to send SNMP commands.
+
+    return jsonify({'message': 'Status updated successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True)
