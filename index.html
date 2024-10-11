@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP Monitoring</title>
+    <style>
+        .interface {
+            margin: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            color: white;
+        }
+        .up { background-color: green; }
+        .down { background-color: red; }
+    </style>
+</head>
+<body>
+    <h1>SNMP Monitoring</h1>
+    <div id="interfaces"></div>
+    <script>
+        async function fetchInterfaceStatus() {
+            const response = await fetch('/api/interface_status');
+            const data = await response.json();
+            const interfaceContainer = document.getElementById('interfaces');
+            interfaceContainer.innerHTML = '';
+            
+            data.forEach(interface => {
+                const div = document.createElement('div');
+                div.className = 'interface';
+                
+                const status = document.createElement('span');
+                status.className = `status ${interface.status.toLowerCase()}`;
+                status.innerText = interface.status === 'Up' ? 'U' : 'D';
+                
+                const button = document.createElement('button');
+                button.innerText = interface.status === 'Up' ? 'Down' : 'Up';
+                button.onclick = () => updateInterfaceStatus(interface.interface, button.innerText);
+
+                div.appendChild(document.createTextNode(`Interface ${interface.interface}: `));
+                div.appendChild(status);
+                div.appendChild(button);
+                interfaceContainer.appendChild(div);
+            });
+        }
+        
+        async function updateInterfaceStatus(interfaceNum, status) {
+            const oid = `1.3.6.1.2.1.2.2.1.7.${interfaceNum}`;
+            await fetch('/api/update_interface', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ oid: oid, status: status })
+            });
+            fetchInterfaceStatus();
+        }
+
+        fetchInterfaceStatus();
+        setInterval(fetchInterfaceStatus, 5000);  // รีเฟรชทุก ๆ 5 วินาที
+    </script>
+</body>
+</html>
