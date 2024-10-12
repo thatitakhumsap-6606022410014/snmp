@@ -5,13 +5,12 @@ app = Flask(__name__)
 
 # Function to set port status using SNMP
 def set_port_status(port, status):
-    # Example of SNMP SET function (OID needs actual IP/target)
+    # Example of SNMP SET function
     # Adjust ifAdminStatus (1: up, 2: down) for each port
     # Replace 'oid_ifAdminStatus' with the correct OID
-    # Replace 'target_ip' with the actual target IP when ready
     g = setCmd(SnmpEngine(),
                CommunityData('public', mpModel=0),
-               UdpTransportTarget(('target_ip', 161)),
+               UdpTransportTarget(('192.168.1.197', 161)),  # Replace target_ip with the actual IP
                ContextData(),
                ObjectType(ObjectIdentity('oid_ifAdminStatus.{}'.format(port)), Integer(status)))
     
