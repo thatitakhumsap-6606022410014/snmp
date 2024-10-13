@@ -1,43 +1,39 @@
-from flask import Flask, render_template, request
-from pysnmp.hlapi import *
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'
 
-# Function to set port status using SNMP
-def set_port_status(port, status):
-    # Example of SNMP SET function
-    # Adjust ifAdminStatus (1: up, 2: down) for each port
-    # Replace 'oid_ifAdminStatus' with the correct OID
-    g = setCmd(SnmpEngine(),
-               CommunityData('public', mpModel=0),
-               UdpTransportTarget(('192.168.1.197', 161)),  # Replace target_ip with the actual IP
-               ContextData(),
-               ObjectType(ObjectIdentity('oid_ifAdminStatus.{}'.format(port)), Integer(status)))
-    
-    errorIndication, errorStatus, errorIndex, varBinds = next(g)
-    
-    if errorIndication:
-        print(errorIndication)
-    elif errorStatus:
-        print(f'{errorStatus.prettyPrint()} at {errorIndex and varBinds[int(errorIndex) - 1][0] or "?"}')
-    else:
-        for varBind in varBinds:
-            print(' = '.join([x.prettyPrint() for x in varBind]))
-
+# Route to display the IP input form
 @app.route('/')
 def index():
-    # Display the switch and router UI for the ports
-    return render_template('index.html', ports=8)
+    return render_template('index.html')
 
-@app.route('/toggle_port', methods=['POST'])
-def toggle_port():
-    port = int(request.form['port'])
-    status = int(request.form['status'])  # 1 for up, 2 for down
+# Route to handle the IP submission and go to Control Port page
+@app.route('/set_ip_address', methods=['POST'])
+def set_ip_address():
+    ip_address = request.form['ip_address']
+    session['ip_address'] = ip_address
+    # Here you could retrieve interface data based on IP and pass it to the next page
+    return redirect(url_for('control_port'))
 
-    # Toggle the port status using SNMP
-    set_port_status(port, status)
-    
-    return {'status': 'success', 'new_status': 1 if status == 2 else 2}
+# Route to display the Control Port page
+@app.route('/control_port')
+def control_port():
+    ip_address = session.get('ip_address', None)
+    interface_data = retrieve_interface_data(ip_address)  # Custom function to get interface data
+    return render_template('index.html', interface_data=interface_data)
+
+# Route to toggle port status (Place this after the control_port route)
+@app.route('/control_port', methods=['POST'])
+def control_port_action():
+    interface_name = request.form['interface_name']
+    action = request.form['action']
+    # Add SNMP command logic here to toggle port state based on `interface_name` and `action`
+    return redirect(url_for('control_port'))
+
+def retrieve_interface_data(ip_address):
+    # Your function to get interface data based on SNMP and IP address
+    return [('1', 'up'), ('2', 'down')]
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0', port=5000)

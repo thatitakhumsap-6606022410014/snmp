@@ -2,41 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SNMP Switch and Router Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNMP Control</title>
     <style>
         .port-button {
-            width: 80px;
-            height: 40px;
+            padding: 10px 20px;
+            font-size: 16px;
             margin: 5px;
-            color: white;
-            font-weight: bold;
+            border: none;
+            cursor: pointer;
         }
-        .up { background-color: green; }
-        .down { background-color: red; }
+        .up { background-color: green; color: white; }
+        .down { background-color: red; color: white; }
     </style>
 </head>
 <body>
-    <h1>SNMP Port Control</h1>
-    <div id="switch">
-        {% for port in range(1, ports + 1) %}
-            <button class="port-button down" id="port{{ port }}" onclick="togglePort({{ port }}, 1)">Port {{ port }}</button>
-        {% endfor %}
-    </div>
 
-    <script>
-        function togglePort(port, status) {
-            fetch('/toggle_port', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `port=${port}&status=${status}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                const button = document.getElementById(`port${port}`);
-                button.className = data.new_status === 1 ? 'port-button up' : 'port-button down';
-                button.setAttribute('onclick', `togglePort(${port}, ${data.new_status})`);
-            });
-        }
-    </script>
+    <!-- Form to set the device IP address -->
+    {% if not interface_data %}
+        <form action="{{ url_for('set_ip_address') }}" method="post">
+            <label for="ip_address">Enter Device IP Address:</label>
+            <input type="text" id="ip_address" name="ip_address" required>
+            <input type="submit" value="Submit">
+        </form>
+    {% endif %}
+
+    <!-- Show interface data for control if available -->
+    {% if interface_data %}
+        <h2>Control Port</h2>
+        <form action="{{ url_for('control_port_action') }}" method="post">
+            <label for="interface_name">Select Port:</label>
+            <select id="interface_name" name="interface_name">
+                {% for port_oid, status in interface_data %}
+                    <option value="{{ port_oid }}">Port {{ port_oid }}</option>
+                {% endfor %}
+            </select>
+            <label for="action">Action:</label>
+            <select id="action" name="action">
+                <option value="up">Up</option>
+                <option value="down">Down</option>
+            </select>
+            <input type="submit" value="Toggle Port">
+        </form>
+        <h2>Interface Data</h2>
+        <ul>
+            {% for port_oid, status in interface_data %}
+                <li>Port {{ port_oid }} - Status: {{ 'Up' if status == 1 else 'Down' }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </body>
 </html>

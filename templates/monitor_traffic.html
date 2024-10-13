@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor Traffic</title>
+</head>
+<body>
+    <h1>Traffic Monitor</h1>
+    <table border="1">
+        <tr>
+            <th>Port</th>
+            <th>In Traffic</th>
+            <th>Out Traffic</th>
+        </tr>
+        {% for port, data in traffic_data.items() %}
+        <tr>
+            <td>{{ port }}</td>
+            <td>{{ data.in_traffic }} bytes</td>
+            <td>{{ data.out_traffic }} bytes</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
